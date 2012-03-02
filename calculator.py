@@ -14,7 +14,7 @@ else:
     sys.exit(0)
 
 if len(sys.argv) > 4:
-    memtable_total_space_in_mb = int(sys.argv[3])
+    memtable_total_space_in_mb = int(sys.argv[4])
 else:
     # Default memtable size is 1/3 of heapspace
     memtable_total_space_in_mb = heapsize / 3.0
