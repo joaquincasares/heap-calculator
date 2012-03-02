@@ -7,7 +7,7 @@ UNIT = 1024.0
 # Ensure command line arguments are given
 if len(sys.argv) > 3:
     filename = sys.argv[1]
-    heapsize = int(sys.argv[2]) * 1000
+    heapsize = int(sys.argv[2]) * UNIT
     avg_key_size = int(sys.argv[3])
 else:
     sys.stderr.write('Usage: <cfstats-output> <heapsize-in-GB> <avg-key-size-in-Bytes> [<memtable-total-space-in-MB>]\n')
