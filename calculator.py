@@ -5,16 +5,19 @@ import sys
 UNIT = 1024.0
 
 # Ensure command line arguments are given
-if len(sys.argv) > 2:
+if len(sys.argv) > 3:
     filename = sys.argv[1]
     heapsize = int(sys.argv[2]) * 1000
+    avg_key_size = int(sys.argv[3])
 else:
-    sys.stderr.write('Usage: <cfstats-output> <heapsize-in-GB>\n')
+    sys.stderr.write('Usage: <cfstats-output> <heapsize-in-GB> <avg-key-size-in-Bytes> [<memtable-total-space-in-MB>]\n')
     sys.exit(0)
 
-
-# Default memtable size is 1/3 of heapspace
-memtable_total_space_in_mb = heapsize / 3.0
+if len(sys.argv) > 4:
+    memtable_total_space_in_mb = int(sys.argv[3])
+else:
+    # Default memtable size is 1/3 of heapspace
+    memtable_total_space_in_mb = heapsize / 3.0
 
 
 # Calculate Key Cache
@@ -36,12 +39,12 @@ for line in cfstats.split('\n'):
         row_cache_estimate += int(line.split(needle)[1])
 
 # For the difference in reported Java heap usage and actual size
-key_cache_estimate *= 12
-row_cache_estimate *= 12
+key_cache_estimate *= 12 * (avg_key_size + 64)
+row_cache_estimate *= 12 * (avg_key_size + 64)
 
-# Bytes -> MegaBytes
-key_cache_estimate /= UNIT
-row_cache_estimate /= UNIT
+# Bytes -> KiloBytes -> MegaBytes
+key_cache_estimate = key_cache_estimate / UNIT / UNIT
+row_cache_estimate = row_cache_estimate / UNIT / UNIT
 
 
 # Print out the Calculated Heap Sizes
@@ -52,7 +55,7 @@ else:
     print 'No caches found. Could not parse cfstats files.'
 
 # Print another estimation if row cache is present
-# May not be necessary since this off heap by default in 1.0+
+# May not be necessary since this by default off heap in 1.0+
 if row_cache_estimate:
     print
     print 'Estimated Java Heap Size (w/Row Cache Sizes):'
