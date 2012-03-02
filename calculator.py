@@ -9,7 +9,7 @@ if len(sys.argv) > 2:
     filename = sys.argv[1]
     heapsize = int(sys.argv[2]) * 1000
 else:
-    sys.stderr.write('Usage: <filename> <heapsize-in-GB>\n')
+    sys.stderr.write('Usage: <cfstats-output> <heapsize-in-GB>\n')
     sys.exit(0)
 
 
