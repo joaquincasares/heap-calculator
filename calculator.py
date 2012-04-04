@@ -49,6 +49,12 @@ row_cache_estimate = row_cache_estimate / UNIT / UNIT
 
 # Print out the Calculated Heap Sizes
 if caches_read:
+    print 'Memtable size: {0:.1f} GB'.format(memtable_total_space_in_mb / UNIT)
+    print 'Key Cache Estimate: {0:.1f} GB'.format(key_cache_estimate / UNIT)
+    if row_cache_estimate:
+        print 'Row Cache Estimate: {0:.1f} GB'.format(row_cache_estimate / UNIT)
+    print
+
     print 'Estimated Java Heap Size:'
     print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_estimate) / UNIT)
 else:
@@ -58,5 +64,5 @@ else:
 # May not be necessary since this by default off heap in 1.0+
 if row_cache_estimate:
     print
-    print 'Estimated Java Heap Size (w/Row Cache Sizes):'
+    print 'Estimated Java Heap Size (w/Row Cache Sizes included):'
     print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_estimate + row_cache_estimate) / UNIT)
