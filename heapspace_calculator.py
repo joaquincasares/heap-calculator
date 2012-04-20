@@ -5,12 +5,13 @@ import sys
 UNIT = 1024.0
 
 # Ensure command line arguments are given
-if len(sys.argv) > 3:
+if len(sys.argv) > 4:
     filename = sys.argv[1]
     heapsize = int(sys.argv[2]) * UNIT
     avg_key_size = int(sys.argv[3])
+    avg_row_size = int(sys.argv[4])
 else:
-    sys.stderr.write('Usage: <cfstats-output> <heapsize-in-GB> <avg-key-size-in-Bytes> [<memtable-total-space-in-MB>]\n')
+    sys.stderr.write('Usage: <cfstats-output> <heapsize-in-GB> <avg-key-size-in-Bytes> <avg-row-size-in-Bytes> [<memtable-total-space-in-MB>]\n')
     sys.exit(0)
 
 if len(sys.argv) > 4:
@@ -40,7 +41,7 @@ for line in cfstats.split('\n'):
 
 # For the difference in reported Java heap usage and actual size
 key_cache_estimate *= 12 * (avg_key_size + 64)
-row_cache_estimate *= 12 * (avg_key_size + 64)
+row_cache_estimate *= 12 * (avg_row_size + 64)
 
 # Bytes -> KiloBytes -> MegaBytes
 key_cache_estimate = key_cache_estimate / UNIT / UNIT
