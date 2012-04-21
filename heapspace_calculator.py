@@ -14,8 +14,8 @@ else:
     sys.stderr.write('Usage: <cfstats-output> <heapsize-in-GB> <avg-key-size-in-Bytes> <avg-row-size-in-Bytes> [<memtable-total-space-in-MB>]\n')
     sys.exit(0)
 
-if len(sys.argv) > 4:
-    memtable_total_space_in_mb = int(sys.argv[4])
+if len(sys.argv) > 5:
+    memtable_total_space_in_mb = int(sys.argv[5])
 else:
     # Default memtable size is 1/3 of heapspace
     memtable_total_space_in_mb = heapsize / 3.0
