@@ -5,8 +5,8 @@ import sys
 if len(sys.argv) > 1:
     filename = sys.argv[1]
 else:
-    sys.stderr.write('Usage: <histogram-output>\n')
-    sys.exit(0)
+    sys.stderr.write('Usage: %s <histogram-output>\n' % __file__)
+    sys.exit(1)
 
 with open(filename) as f:
     histogram = f.read().strip().split('\n')

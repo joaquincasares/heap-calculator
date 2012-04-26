@@ -11,8 +11,8 @@ if len(sys.argv) > 4:
     avg_key_size = int(sys.argv[3])
     avg_row_size = int(sys.argv[4])
 else:
-    sys.stderr.write('Usage: <cfstats-output> <heapsize-in-GB> <avg-key-size-in-Bytes> <avg-row-size-in-Bytes> [<memtable-total-space-in-MB>]\n')
-    sys.exit(0)
+    sys.stderr.write('Usage: %s <cfstats-output> <heapsize-in-GB> <avg-key-size-in-Bytes> <avg-row-size-in-Bytes> [<memtable-total-space-in-MB>]\n' % __file__)
+    sys.exit(1)
 
 if len(sys.argv) > 5:
     memtable_total_space_in_mb = int(sys.argv[5])
