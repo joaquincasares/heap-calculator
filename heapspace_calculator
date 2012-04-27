@@ -30,12 +30,12 @@ key_cache_estimate = 0
 row_cache_estimate = 0
 
 for line in cfstats.split('\n'):
-    needle = 'Key cache size:'
+    needle = 'Key cache capacity:'
     if needle in line:
         caches_read = True
         key_cache_estimate += int(line.split(needle)[1])
 
-    needle = 'Row cache size:'
+    needle = 'Row cache capacity:'
     if needle in line:
         row_cache_estimate += int(line.split(needle)[1])
 
