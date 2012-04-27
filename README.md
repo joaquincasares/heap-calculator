@@ -18,5 +18,5 @@ Needed to run are:
 avg_row_size_calculator
 -----------------------
 
-Takes the path to a file containing the `nodetool cfhistogram` output for all
-column familes.
+Takes the path to a file containing the
+`nodetool cfhistograms <keyspace> <cfname>` output for all column familes.
