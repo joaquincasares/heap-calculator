@@ -65,5 +65,5 @@ else:
 # May not be necessary since this by default off heap in 1.0+
 if row_cache_estimate:
     print
-    print 'Estimated Java Heap Size (w/Row Cache Sizes included):'
+    print 'Estimated Native Memory Requirement (w/Row Cache Sizes Included):'
     print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_estimate + row_cache_estimate) / UNIT)
