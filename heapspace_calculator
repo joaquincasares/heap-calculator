@@ -27,6 +27,7 @@ with open(filename, 'r') as f:
 
 caches_read = False
 key_cache_estimate = 0
+key_cache_used = 0
 row_cache_estimate = 0
 
 for line in cfstats.split('\n'):
@@ -35,16 +36,22 @@ for line in cfstats.split('\n'):
         caches_read = True
         key_cache_estimate += int(line.split(needle)[1])
 
+    needle = 'Key cache size:'
+    if needle in line:
+        key_cache_used += int(line.split(needle)[1])
+
     needle = 'Row cache capacity:'
     if needle in line:
         row_cache_estimate += int(line.split(needle)[1])
 
 # For the difference in reported Java heap usage and actual size
 key_cache_estimate *= 12 * (avg_key_size + 64)
+key_cache_used *= 12 * (avg_key_size + 64)
 row_cache_estimate *= 12 * (avg_row_size + 64)
 
 # Bytes -> KiloBytes -> MegaBytes
 key_cache_estimate = key_cache_estimate / UNIT / UNIT
+key_cache_used = key_cache_used / UNIT / UNIT
 row_cache_estimate = row_cache_estimate / UNIT / UNIT
 
 
@@ -56,7 +63,15 @@ if caches_read:
         print 'Row Cache Estimate: {0:.1f} GB'.format(row_cache_estimate / UNIT)
     print
 
-    print 'Estimated Java Heap Size:'
+    print '75% of the Heap Size:'
+    print '{0:.2f} GB'.format(heapsize / UNIT * 0.7)
+    print
+
+    print 'Estimated Java Heap Size (Currently Used):'
+    print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_used) / UNIT)
+    print
+
+    print 'Estimated Java Heap Size (Full Capacity):'
     print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_estimate) / UNIT)
 else:
     print 'No caches found. Could not parse cfstats files.'
