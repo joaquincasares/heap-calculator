@@ -29,6 +29,7 @@ caches_read = False
 key_cache_estimate = 0
 key_cache_used = 0
 row_cache_estimate = 0
+bloom_filter_used = 0
 
 for line in cfstats.split('\n'):
     needle = 'Key cache capacity:'
@@ -44,6 +45,10 @@ for line in cfstats.split('\n'):
     if needle in line:
         row_cache_estimate += int(line.split(needle)[1])
 
+    needle = 'Bloom Filter Space Used:'
+    if needle in line:
+        bloom_filter_used += int(line.split(needle)[1])
+
 # For the difference in reported Java heap usage and actual size
 key_cache_estimate *= 12 * (avg_key_size + 64)
 key_cache_used *= 12 * (avg_key_size + 64)
@@ -53,6 +58,7 @@ row_cache_estimate *= 12 * (avg_row_size + 64)
 key_cache_estimate = key_cache_estimate / UNIT / UNIT
 key_cache_used = key_cache_used / UNIT / UNIT
 row_cache_estimate = row_cache_estimate / UNIT / UNIT
+bloom_filter_used = bloom_filter_used / UNIT / UNIT
 
 
 # Print out the Calculated Heap Sizes
@@ -61,6 +67,7 @@ if caches_read:
     print 'Key Cache Estimate: {0:.1f} GB'.format(key_cache_estimate / UNIT)
     if row_cache_estimate:
         print 'Row Cache Estimate: {0:.1f} GB'.format(row_cache_estimate / UNIT)
+    print 'Bloom Filter Size: {0:.1f} MB'.format(bloom_filter_used)
     print
 
     print '75% of the Heap Size:'
@@ -68,11 +75,11 @@ if caches_read:
     print
 
     print 'Estimated Java Heap Size (Currently Used):'
-    print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_used) / UNIT)
+    print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_used + bloom_filter_used) / UNIT)
     print
 
     print 'Estimated Java Heap Size (Full Capacity):'
-    print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_estimate) / UNIT)
+    print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_estimate + bloom_filter_used) / UNIT)
 else:
     print 'No caches found. Could not parse cfstats files.'
 
@@ -81,4 +88,6 @@ else:
 if row_cache_estimate:
     print
     print 'Estimated Native Memory Requirement (w/Row Cache Sizes Included):'
-    print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_estimate + row_cache_estimate) / UNIT)
+    print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_estimate + bloom_filter_used + row_cache_estimate) / UNIT)
+    print
+    print 'Note: Ensure JNA is enabled and that the SerializedRowCacheProvider is being used. Else, the row cache lives on the heap.'
