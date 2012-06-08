@@ -64,6 +64,7 @@ bloom_filter_used = bloom_filter_used / UNIT / UNIT
 # Print out the Calculated Heap Sizes
 if caches_read:
     print 'Memtable size: {0:.1f} GB'.format(memtable_total_space_in_mb / UNIT)
+    print 'Key Cache Used: {0:.1f} GB'.format(key_cache_used / UNIT)
     print 'Key Cache Estimate: {0:.1f} GB'.format(key_cache_estimate / UNIT)
     if row_cache_estimate:
         print 'Row Cache Estimate: {0:.1f} GB'.format(row_cache_estimate / UNIT)
