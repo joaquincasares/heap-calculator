@@ -7,7 +7,7 @@ UNIT = 1024.0
 # Ensure command line arguments are given
 if len(sys.argv) > 4:
     filename = sys.argv[1]
-    heapsize = int(sys.argv[2]) * UNIT
+    heapsize = float(sys.argv[2]) * UNIT
     avg_key_size = int(sys.argv[3])
     avg_row_size = int(sys.argv[4])
 else:
