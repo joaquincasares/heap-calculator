@@ -1,94 +1,85 @@
 #!/usr/bin/env python
 
 import sys
+import yaml
 
 UNIT = 1024.0
 
 # Ensure command line arguments are given
-if len(sys.argv) > 4:
-    filename = sys.argv[1]
-    heapsize = float(sys.argv[2]) * UNIT
-    avg_key_size = int(sys.argv[3])
-    avg_row_size = int(sys.argv[4])
+if len(sys.argv) > 3:
+    cfstats = sys.argv[1]
+    cassandrayaml = sys.argv[2]
+    heapsize = float(sys.argv[3]) * UNIT
 else:
-    sys.stderr.write('Usage: %s <cfstats-output> <heapsize-in-GB> <avg-key-size-in-Bytes> <avg-row-size-in-Bytes> [<memtable-total-space-in-MB>]\n' % __file__)
+    sys.stderr.write('Usage: %s <cfstats-output> <cassandra.yaml> <heapsize-in-GB> [<avg-key-size-in-Bytes>]\n' % __file__)
     sys.exit(1)
 
-if len(sys.argv) > 5:
-    memtable_total_space_in_mb = int(sys.argv[5])
+if len(sys.argv) > 4:
+    # Bytes -> KiloBytes -> MegaBytes
+    avg_key_size = int(sys.argv[4]) / UNIT / UNIT
+else:
+    avg_key_size = None
+
+
+# Read cassandra.yaml
+with open(cassandrayaml) as f:
+    cassandrayaml = yaml.load(f)
+
+if 'key_cache_size_in_mb' in cassandrayaml and isinstance(cassandrayaml['key_cache_size_in_mb'], int):
+    key_cache_size = cassandrayaml['key_cache_size_in_mb']
+else:
+    key_cache_size = min(0.05 * heapsize * UNIT, 100)
+
+if 'memtable_total_space_in_mb' in cassandrayaml:
+    memtable_total_space_in_mb = cassandrayaml['memtable_total_space_in_mb']
 else:
     # Default memtable size is 1/3 of heapspace
     memtable_total_space_in_mb = heapsize / 3.0
 
+if 'index_interval' in cassandrayaml:
+    index_interval = cassandrayaml['index_interval']
+else:
+    index_interval = 128
+
+index_size = float(key_cache_size) / index_interval
+
 
 # Calculate Key Cache
-with open(filename, 'r') as f:
+with open(cfstats, 'r') as f:
     cfstats = f.read()
 
-caches_read = False
-key_cache_estimate = 0
-key_cache_used = 0
-row_cache_estimate = 0
 bloom_filter_used = 0
-
 for line in cfstats.split('\n'):
-    needle = 'Key cache capacity:'
-    if needle in line:
-        caches_read = True
-        key_cache_estimate += int(line.split(needle)[1])
-
-    needle = 'Key cache size:'
-    if needle in line:
-        key_cache_used += int(line.split(needle)[1])
-
-    needle = 'Row cache capacity:'
-    if needle in line:
-        row_cache_estimate += int(line.split(needle)[1])
-
     needle = 'Bloom Filter Space Used:'
     if needle in line:
         bloom_filter_used += int(line.split(needle)[1])
 
-# For the difference in reported Java heap usage and actual size
-key_cache_estimate *= 12 * (avg_key_size + 64)
-key_cache_used *= 12 * (avg_key_size + 64)
-row_cache_estimate *= 12 * (avg_row_size + 64)
-
 # Bytes -> KiloBytes -> MegaBytes
-key_cache_estimate = key_cache_estimate / UNIT / UNIT
-key_cache_used = key_cache_used / UNIT / UNIT
-row_cache_estimate = row_cache_estimate / UNIT / UNIT
 bloom_filter_used = bloom_filter_used / UNIT / UNIT
 
 
 # Print out the Calculated Heap Sizes
-if caches_read:
-    print 'Memtable size: {0:.1f} GB'.format(memtable_total_space_in_mb / UNIT)
-    print 'Key Cache Used: {0:.1f} GB'.format(key_cache_used / UNIT)
-    print 'Key Cache Estimate: {0:.1f} GB'.format(key_cache_estimate / UNIT)
-    if row_cache_estimate:
-        print 'Row Cache Estimate: {0:.1f} GB'.format(row_cache_estimate / UNIT)
-    print 'Bloom Filter Size: {0:.1f} MB'.format(bloom_filter_used)
-    print
+print 'Memtable size: {0:.1f} GB'.format(memtable_total_space_in_mb / UNIT)
+print 'Key Cache Used: {0:.1f} GB'.format(key_cache_size / UNIT)
+print 'Bloom Filter Size: {0:.1f} MB'.format(bloom_filter_used)
+print 'Index Size: {0:.1f} MB'.format(index_size)
+print
 
-    print '75% of the Heap Size:'
-    print '{0:.2f} GB'.format(heapsize / UNIT * 0.7)
-    print
+print '75% of the Heap Size:'
+print '{0:.2f} GB'.format(heapsize / UNIT * 0.7)
+print
 
-    print 'Estimated Java Heap Size (Currently Used):'
-    print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_used + bloom_filter_used) / UNIT)
-    print
+print 'Estimated Java Heap Size:'
+print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_size + bloom_filter_used + index_size) / UNIT)
+print
 
-    print 'Estimated Java Heap Size (Full Capacity):'
-    print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_estimate + bloom_filter_used) / UNIT)
-else:
-    print 'No caches found. Could not parse cfstats files.'
+# Alert cases
+if 'row_cache_provider' in cassandrayaml:
+    if cassandrayaml['row_cache_provider'] != 'SerializingCacheProvider':
+        print 'ALERT: Not using SerializingCacheProvider!'
+        print
 
-# Print another estimation if row cache is present
-# May not be necessary since this by default off heap in 1.0+
-if row_cache_estimate:
-    print
-    print 'Estimated Native Memory Requirement (w/Row Cache Sizes Included):'
-    print '{0:.2f} GB'.format((memtable_total_space_in_mb + UNIT + key_cache_estimate + bloom_filter_used + row_cache_estimate) / UNIT)
-    print
-    print 'Note: Ensure JNA is enabled and that the SerializedRowCacheProvider is being used. Else, the row cache lives on the heap.'
+if 'rpc_timeout_in_ms' in cassandrayaml:
+    if cassandrayaml['rpc_timeout_in_ms'] > 10000:
+        print 'ALERT: rpc_timeout_in_ms currently at: %s' % cassandrayaml['rpc_timeout_in_ms']
+        print

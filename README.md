@@ -3,6 +3,13 @@ Description
 
 Calculates the heap space used by Apache Cassandra.
 
+Setup
+-----
+
+To run `heapspace_calculator1.1` you must first run:
+
+    pip install pyyaml
+
 heapspace_calculator
 --------------------
 
