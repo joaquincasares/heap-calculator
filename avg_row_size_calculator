@@ -36,13 +36,13 @@ for i, line in enumerate(histogram):
         total_estimated_row_size += size_range * sized_rows
     except:
         # Catch the first and all non-data rows
-        if not offset_index and split_line[0] == 'Offset':
+        if not offset_index and split_line and split_line[0] == 'Offset':
             # Allow a split for phrases with spaces, i.e. 'Row Size'
             line = filter(None, line.split('  '))
 
             # Get the column index of Offsets and Row Sizes
             offset_index = line.index('Offset')
-            row_size_index = line.index('Row Size')
+            row_size_index = line.index('Partition Size')
 
 # Print the average estimated row size
 print total_estimated_row_size / total_rows
